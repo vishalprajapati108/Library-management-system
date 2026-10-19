@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#1d3638; --desk-2:#264648; --card:#eef2f3; --ink:#1b2a2c;
+  --rule:#b9cfd6; --margin:#c8503f; --brass:#b98a3e; --muted:#5d7377;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--desk);color:var(--card);font-family:"IBM Plex Sans",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 60px;display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start}
+header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+h1{font-family:"Special Elite",monospace;font-weight:400;font-size:clamp(28px,4vw,44px);margin:0;letter-spacing:.5px}
+.stats{font-size:14px;color:#9fb8bb}
+.stats b{color:var(--brass);font-size:18px}
+
+/* form drawer */
+.drawer{background:var(--desk-2);border:1px solid #35595c;border-radius:6px;padding:22px;position:sticky;top:20px}
+.drawer h2{font-family:"Special Elite",monospace;font-weight:400;font-size:20px;margin:0 0 16px}
+label{display:block;font-size:13px;color:#9fb8bb;margin:12px 0 4px}
+input{width:100%;padding:10px 12px;border:1px solid #3d6266;border-radius:4px;background:#1a3032;color:var(--card);font:inherit}
+input:focus,button:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 90px;gap:10px}
+.actions{display:flex;gap:10px;margin-top:20px}
+button{font:inherit;font-weight:600;border:0;border-radius:4px;padding:10px 16px;cursor:pointer}
+.primary{background:var(--brass);color:#22190a;flex:1}
+.ghost{background:transparent;color:#9fb8bb;border:1px solid #3d6266}
+.msg{margin-top:14px;font-size:13px;min-height:18px;color:#e6b3a8}
+.msg.ok{color:#9ad3b0}
+
+/* search */
+.tools{display:flex;gap:10px;margin-bottom:18px}
+.tools input{max-width:360px}
+
+/* catalog cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.card{
+  position:relative;background:
+    linear-gradient(90deg,transparent 46px,var(--margin) 46px,var(--margin) 47px,transparent 47px),
+    repeating-linear-gradient(transparent 0 27px,var(--rule) 27px 28px);
+  background-color:var(--card);background-position:0 0,0 44px;background-repeat:no-repeat,repeat;
+  color:var(--ink);border-radius:3px;padding:14px 16px 16px 60px;min-height:210px;
+  box-shadow:0 1px 0 #fff inset,0 8px 18px rgba(0,0,0,.35);font-family:"Special Elite",monospace
+}
+.card::before{content:"";position:absolute;left:14px;bottom:14px;width:16px;height:16px;border-radius:50%;background:var(--desk);box-shadow:inset 0 2px 3px rgba(0,0,0,.6)}
+.id{position:absolute;top:10px;right:14px;font-size:12px;color:var(--muted)}
+.isbn{font-size:12px;color:var(--brass);font-weight:700;letter-spacing:1px;margin:0 0 6px;padding-right:34px;word-break:break-all}
+.title{font-size:20px;line-height:28px;margin:0;font-weight:400}
+.author{font-size:15px;line-height:28px;color:var(--muted);margin:0}
+.qty{display:flex;align-items:center;gap:8px;margin-top:10px;font-family:"IBM Plex Sans",sans-serif;font-size:13px;line-height:28px}
+.spines{display:flex;gap:2px;align-items:flex-end;height:22px;flex-wrap:wrap;max-width:150px}
+.spines i{display:block;width:5px;border-radius:1px;background:var(--desk)}
+.spines i:nth-child(3n){height:22px;background:var(--margin)}
+.spines i:nth-child(3n+1){height:18px}
+.spines i:nth-child(3n+2){height:20px;background:var(--brass)}
+.card .btns{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}
+.card .btns button{padding:5px 10px;font-size:12px;background:#d6e1e4;color:var(--ink)}
+.card .btns .del{background:var(--margin);color:#fff}
+.empty{grid-column:1/-1;padding:40px;border:1px dashed #3d6266;border-radius:6px;color:#9fb8bb;text-align:center}
+
+@media (max-width:820px){.wrap{grid-template-columns:1fr}.drawer{position:static}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Library Catalog</h1>
+    <div class="stats"><b id="sTitles">0</b> titles &nbsp; <b id="sCopies">0</b> copies</div>
+  </header>
+
+  <aside class="drawer">
+    <h2 id="formTitle">File a new book</h2>
+    <input type="hidden" id="id">
+    <label for="title">Title</label>
+    <input id="title" placeholder="Effective Java">
+    <label for="author">Author</label>
+    <input id="author" placeholder="Joshua Bloch">
+    <div class="row">
+      <div><label for="isbn">ISBN</label><input id="isbn" placeholder="9780134685991" inputmode="numeric"></div>
+      <div><label for="quantity">Quantity</label><input id="quantity" type="number" min="0" value="1"></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="saveBtn">Add book</button>
+      <button class="ghost" id="cancelBtn" hidden>Cancel</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+  </aside>
+
+  <main>
+    <div class="tools"><input id="search" type="search" placeholder="Search title, author or ISBN"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+const API = "/api/books";           // GET, POST, PUT /{id}, DELETE /{id}
+let books = [], demo = false, nextId = 1;
+const $ = id => document.getElementById(id);
+
+function say(text, ok){ const m=$("msg"); m.textContent=text; m.className="msg"+(ok?" ok":""); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+async function api(method, path="", body){
+  if(demo) return localApi(method, path, body);
+  try{
+    const res = await fetch(API+path,{method,headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+    if(!res.ok) throw new Error(await res.text() || res.status);
+    return res.status===204 ? null : res.json();
+  }catch(e){
+    if(method==="GET" && path===""){ demo=true; say("Backend not reachable. Showing demo data in this browser tab only."); return localApi(method,path,body); }
+    throw e;
+  }
+}
+function localApi(method, path, body){
+  const id = Number(path.slice(1));
+  if(method==="GET") return books;
+  if(method==="POST"){ const b={...body,id:nextId++}; books.push(b); return b; }
+  if(method==="PUT"){ books=books.map(b=>b.id===id?{...body,id}:b); return body; }
+  if(method==="DELETE"){ books=books.filter(b=>b.id!==id); return null; }
+}
+
+async function load(){ books = await api("GET"); if(demo && !books.length){ books=[{id:nextId++,isbn:"9780134685991",title:"Effective Java",author:"Joshua Bloch",quantity:5}]; } render(); }
+
+function render(){
+  const q = $("search").value.trim().toLowerCase();
+  const list = books.filter(b=>[b.title,b.author,b.isbn].join(" ").toLowerCase().includes(q));
+  $("sTitles").textContent = books.length;
+  $("sCopies").textContent = books.reduce((n,b)=>n+Number(b.quantity||0),0);
+  $("grid").innerHTML = list.length ? list.map(b=>`
+    <article class="card">
+      <span class="id">No. ${esc(b.id)}</span>
+      <p class="isbn">${esc(b.isbn)}</p>
+      <h3 class="title">${esc(b.title)}</h3>
+      <p class="author">${esc(b.author)}</p>
+      <div class="qty"><span class="spines">${"<i></i>".repeat(Math.min(b.quantity,12))}</span>${esc(b.quantity)} ${b.quantity==1?"copy":"copies"}</div>
+      <div class="btns"><button onclick="edit(${b.id})">Edit</button><button class="del" onclick="del(${b.id})">Delete</button></div>
+    </article>`).join("")
+  : `<div class="empty">${books.length?"No books match your search.":"The catalog is empty. Add your first book using the form."}</div>`;
+}
+
+function reset(){
+  ["id","title","author","isbn"].forEach(f=>$(f).value=""); $("quantity").value=1;
+  $("formTitle").textContent="File a new book"; $("saveBtn").textContent="Add book"; $("cancelBtn").hidden=true;
+}
+function edit(id){
+  const b = books.find(x=>x.id===id); if(!b) return;
+  $("id").value=b.id; $("title").value=b.title; $("author").value=b.author; $("isbn").value=b.isbn; $("quantity").value=b.quantity;
+  $("formTitle").textContent="Edit book No. "+b.id; $("saveBtn").textContent="Save changes"; $("cancelBtn").hidden=false;
+  $("title").focus(); window.scrollTo({top:0,behavior:"smooth"});
+}
+async function del(id){
+  if(!confirm("Delete this book from the catalog?")) return;
+  try{ await api("DELETE","/"+id); books=books.filter(b=>b.id!==id); render(); say("Book deleted.",true); }
+  catch(e){ say("Could not delete the book: "+e.message); }
+}
+async function save(){
+  const data = { title:$("title").value.trim(), author:$("author").value.trim(), isbn:$("isbn").value.trim().replace(/[-\s]/g,""), quantity:Number($("quantity").value) };
+  if(!data.title||!data.author) return say("Enter both a title and an author.");
+  if(!/^(\d{10}|\d{13})$/.test(data.isbn)) return say("ISBN must be 10 or 13 digits.");
+  if(!Number.isInteger(data.quantity)||data.quantity<0) return say("Quantity must be a whole number, 0 or more.");
+  const id = $("id").value;
+  const dupe = books.find(b=>b.isbn===data.isbn && String(b.id)!==id);
+  if(dupe) return say("This ISBN is already filed as No. "+dupe.id+". Edit that book to change its quantity.");
+  try{
+    if(id){ await api("PUT","/"+id,data); say("Changes saved.",true); }
+    else { await api("POST","",data); say("Book added.",true); }
+    reset(); await load();
+  }catch(e){ say("Could not save the book: "+e.message); }
+}
+
+$("saveBtn").onclick = save;
+$("cancelBtn").onclick = reset;
+$("search").oninput = render;
+load();
+</script>
+</body>
+</html>
